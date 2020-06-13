@@ -6,49 +6,32 @@ ENV ANDROID_HOME="/opt/android-sdk" \
 # Get the latest version from https://developer.android.com/studio/index.html
 ENV ANDROID_SDK_TOOLS_VERSION="4333796"
 
-# nodejs version
-ENV NODE_VERSION="12.x"
-
-# Set locale
-ENV LANG="en_US.UTF-8" \
-    LANGUAGE="en_US.UTF-8" \
-    LC_ALL="en_US.UTF-8"
-
-RUN apt-get clean && \
-    apt-get update -qq && \
-    apt-get install -qq -y apt-utils locales && \
-    locale-gen $LANG
-
-ENV DEBIAN_FRONTEND="noninteractive" \
-    TERM=dumb \
-    DEBIAN_FRONTEND=noninteractive
-
 # Variables must be references after they are created
 ENV ANDROID_SDK_HOME="$ANDROID_HOME"
 
 ENV PATH="$PATH:$ANDROID_SDK_HOME/emulator:$ANDROID_SDK_HOME/tools/bin:$ANDROID_SDK_HOME/tools:$ANDROID_SDK_HOME/platform-tools"
 
-WORKDIR /tmp
+ENV DEBIAN_FRONTEND="noninteractive" \
+    TERM=dumb \
+    DEBIAN_FRONTEND=noninteractive
 
 # Installing packages
-RUN apt-get update -qq > /dev/null && \
-    apt-get install -qq locales > /dev/null && \
-    locale-gen "$LANG" > /dev/null && \
-    apt-get install -qq --no-install-recommends \
+RUN apt-get update && apt-get install -y --no-install-recommends \
         git \
         openjdk-8-jdk \
-        software-properties-common \
         unzip \
-        wget \
-        zip > /dev/null && \
-    echo "Installing nodejs, cordova" && \
-    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.3/install.sh | bash \
+        zip 
+
+# Installing Node
+ENV NODE_VERSION="12.x"
+RUN apt-get install curl -y && echo "Installing nodejs, cordova" && curl -sL -k https://deb.nodesource.com/setup_${NODE_VERSION} \
         | bash - > /dev/null && \
-    . ~/.nvm/nvm.sh && nvm install --lts &&\
-    npm install --quiet -g \
-        cordova > /dev/null && \
-    npm cache clean --force > /dev/null && \
-    rm -rf /tmp/* /var/tmp/*
+    apt-get install -qq nodejs > /dev/null && \
+    apt-get clean > /dev/null && npm install npm@latest -g
+
+RUN npm install --quite -g cordova
+
+RUN apt-get install wget -y
 
 # Install Android SDK
 RUN echo "Installing sdk tools ${ANDROID_SDK_TOOLS_VERSION}" && \
