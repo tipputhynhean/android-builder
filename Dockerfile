@@ -113,10 +113,24 @@ RUN echo "Installing Google APIs" && \
         "add-ons;addon-google_apis-google-17" \
         "add-ons;addon-google_apis-google-16" > /dev/null
 
-RUN echo "Installing gradle" && \
-    curl -s "https://get.sdkman.io" | bash && source "$HOME/.sdkman/bin/sdkman-init.sh" &&\
-    sdk install gradle 6.5 && \
-    rm -f sdk.install.sh
+ENV GRADLE_HOME /opt/gradle
+ENV GRADLE_VERSION 6.5
+ARG GRADLE_DOWNLOAD_SHA256=23e7d37e9bb4f8dabb8a3ea7fdee9dd0428b9b1a71d298aefd65b11dccea220f
+RUN set -o errexit -o nounset \
+    && echo "Downloading Gradle" \
+    && wget --no-verbose --output-document=gradle.zip "https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip" \
+    \
+    && echo "Checking download hash" \
+    && echo "${GRADLE_DOWNLOAD_SHA256} *gradle.zip" | sha256sum --check - \
+    \
+    && echo "Installing Gradle" \
+    && unzip gradle.zip \
+    && rm gradle.zip \
+    && mv "gradle-${GRADLE_VERSION}" "${GRADLE_HOME}/" \
+    && ln --symbolic "${GRADLE_HOME}/bin/gradle" /usr/bin/gradle \
+    \
+    && echo "Testing Gradle installation" \
+    && gradle --version
 
 # Copy sdk license agreement files.
 RUN mkdir -p $ANDROID_HOME/licenses
